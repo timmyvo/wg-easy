@@ -1,16 +1,26 @@
 version: "3.8"
+
+networks:
+  private_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.2.0.0/24
+
 services:
   wg-easy:
+    depends_on: [adguard]
     environment:
       # ⚠️ Required:
       # Change this to your host's public address
-      - WG_HOST=raspberrypi.local
+      - WG_HOST=x.x.x.x
 
       # Optional:
-      # - PASSWORD=foobar123
+      - PASSWORD=x.x.x.x
       # - WG_PORT=51820
       # - WG_DEFAULT_ADDRESS=10.8.0.x
-      # - WG_DEFAULT_DNS=1.1.1.1
+      - WG_DEFAULT_DNS=10.2.0.100
+      - WG_PERSISTENT_KEEPALIVE=25
       # - WG_MTU=1420
       # - WG_ALLOWED_IPS=192.168.15.0/24, 10.0.1.0/24
       
@@ -28,3 +38,16 @@ services:
     sysctls:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
+
+  adguard:
+    container_name: adguard
+    image: adguard/adguardhome
+    restart: unless-stopped
+    hostname: adguard
+    # Volumes store your data between container upgrades
+    volumes:
+      - "./adguard/opt-adguard-work:/opt/adguardhome/work"
+      - "./adguard/opt-adguard-conf:/opt/adguardhome/conf"
+    networks:
+      private_network:
+        ipv4_address: 10.2.0.100
