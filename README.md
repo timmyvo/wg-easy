@@ -1,6 +1,6 @@
 Disclaimer: This is a little tweak for my taste of using WG easy with AdguardHome. Forked from WeeJeWel/wg-easy and fnazz/docker-adguard-unbound-wireguard
 
-Please refer to those origin for details when you want to cook for yourself. 
+Please refer to those origins for details when you want to cook for yourself. 
 
 # WireGuard Easy
 
