@@ -1,3 +1,6 @@
+Disclaimer: This is a little tweak for my taste of using WG easy with AdguardHome. Forked from WeeJeWel/wg-easy and fnazz/docker-adguard-unbound-wireguard
+Please refer to those origin for details when you want to cook for yourself. 
+
 # WireGuard Easy
 
 [![Build & Publish Docker Image to Docker Hub](https://github.com/WeeJeWel/wg-easy/actions/workflows/deploy.yml/badge.svg?branch=production)](https://github.com/WeeJeWel/wg-easy/actions/workflows/deploy.yml)
@@ -31,48 +34,85 @@ You have found the easiest way to install & manage WireGuard on any Linux host!
 ## Installation
 
 ### 1. Install Docker
+<pre>
+$ sudo apt update && sudo apt upgrade -y
+$ sudo apt install docker.io
+</pre>
 
-If you haven't installed Docker yet, install it by running:
+### 2. Install Docker Compose
+<pre>
+$ sudo apt install python3-pip
+$ sudo pip install docker-compose
+</pre>
 
-```bash
-$ curl -sSL https://get.docker.com | sh
-$ sudo usermod -aG docker $(whoami)
-$ exit
-```
+Check installation success
+<pre>
+$ docker-compose --version
+</pre>
 
-And log in again.
+### 3. Allow non-root to run command without "sudo"
+<pre>
+$ sudo groupadd docker
+$ sudo usermod -aG docker $USER
+</pre>
 
-### 2. Run WireGuard Easy
+Reboot to apply
+
+### 4. Run WireGuard Easy + Adguard Home:
 
 To automatically install & run wg-easy, simply run:
-
 <pre>
-$ docker run -d \
-  --name=wg-easy \
-  -e WG_HOST=<b>🚨YOUR_SERVER_IP</b> \
-  -e PASSWORD=<b>🚨YOUR_ADMIN_PASSWORD</b> \
-  -v ~/.wg-easy:/etc/wireguard \
-  -p 51820:51820/udp \
-  -p 51821:51821/tcp \
-  --cap-add=NET_ADMIN \
-  --cap-add=SYS_MODULE \
-  --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
-  --sysctl="net.ipv4.ip_forward=1" \
-  --restart unless-stopped \
-  weejewel/wg-easy
+$ mkdir ~/.wg-easy
+$ cd ~/.wg-easy
+$ wget https://github.com/timmyvo/wg-easy-adguardhome/raw/master/docker-compose.yml
+$ nano docker-compose.yml # To edit some input attribute, modify to suit your needs.
 </pre>
 
 > 💡 Replace `YOUR_SERVER_IP` with your WAN IP, or a Dynamic DNS hostname.
 > 
 > 💡 Replace `YOUR_ADMIN_PASSWORD` with a password to log in on the Web UI.
 
-The Web UI will now be available on `http://0.0.0.0:51821`.
+Ctrl + X then Y to save your "docker-compose.yml" file.
+Then enter command: 
+
+<pre>
+$ docker-compose up --detach
+</pre>
+
+The Web UI will now be available on `http://<YOUR_SERVER_IP>:51821`.
 
 > 💡 Your configuration files will be saved in `~/.wg-easy`
 
-### 3. Sponsor
+### 5. Add rules into firewall in order to allow internet connection:
 
-Are you enjoying this project? [Buy me a beer!](https://github.com/sponsors/WeeJeWel) 🍻
+Open iptables with this command:
+<pre>
+sudo nano /etc/iptables/rules.v4
+</pre>
+and add these below lines after row "-A INPUT -p udp -m udp --sport 123 -j ACCEPT":
+
+<pre>
+-A INPUT -p tcp --dport 53 -j ACCEPT
+-A INPUT -p udp --dport 53 -j ACCEPT
+-A INPUT -p udp --dport 51820 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+-A INPUT -p udp -m state --state NEW -m udp --dport 51820 -j ACCEPT
+</pre>
+
+Ctrl + X then Y to save your "rules.v4" file then run:
+
+<pre>
+$ sudo iptables-restore < /etc/iptables/rules.v4
+</pre>
+
+to apply
+
+You now can create user with web UI and then connect your PC to config Adguard Home.
+
+### 5. Access Adguard Home:
+
+Do connect you PC with the wireguard and while connected to WireGuard, navigate to http://10.2.0.100:3000 first to setup AdGuard Home before DNS query and adblocking to work.
 
 ## Options
 
