@@ -13,10 +13,10 @@ services:
     environment:
       # ⚠️ Required:
       # Change this to your host's public address
-      - WG_HOST=x.x.x.x
+      - WG_HOST=
 
       # Optional:
-      - PASSWORD=x.x.x.x
+      - PASSWORD=
       # - WG_PORT=51820
       # - WG_DEFAULT_ADDRESS=10.8.0.x
       - WG_DEFAULT_DNS=10.2.0.100
@@ -41,6 +41,25 @@ services:
     networks:
       private_network:
         ipv4_address: 10.2.0.3
+
+  tailscale:
+    depends_on: [adguard]
+    container_name: tailscaled
+    image: tailscale/tailscale:stable
+    restart: unless-stopped
+    privileged: true
+    command: tailscaled
+    volumes:
+      - "/var/lib:/var/lib"
+      - "/dev/net/tun:/dev/net/tun"
+    networks:
+      private_network:
+        ipv4_address: 10.2.0.2
+    dns:
+      - 10.2.0.100
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
 
   adguard:
     container_name: adguard
