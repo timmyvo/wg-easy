@@ -1,31 +1,32 @@
-version: "3.8"
+version: "3.9"
 
 networks:
   private_network:
     ipam:
-      driver: default
       config:
         - subnet: 10.2.0.0/24
 
 services:
   wg-easy:
-    depends_on: [adguard]
-    environment:
-      # ⚠️ Required:
-      # Change this to your host's public address
-      - WG_HOST= 
-
-      # Optional:
-      - PASSWORD=
-      # - WG_PORT=51820
-      # - WG_DEFAULT_ADDRESS=10.8.0.x
-      - WG_DEFAULT_DNS=10.2.0.100
-      - WG_PERSISTENT_KEEPALIVE=25
-      # - WG_MTU=1420
-      # - WG_ALLOWED_IPS=192.168.15.0/24, 10.0.1.0/24
-      
-    image: weejewel/wg-easy
+    image: ghcr.io/wg-easy/wg-easy:14
     container_name: wg-easy
+    depends_on: 
+      - adguard
+    environment:
+      # âš ï¸ Required:
+      # Change this to your host's public address
+      WG_HOST:
+      # Optional:
+      PASSWORD_HASH: $$2a$$12$$GIiB9PJC6df4MlpnveYNlOucmxTNsyF03WfJEsF7LJKvanCU1efau 
+      # WG_PORT: 51820
+      # WG_DEFAULT_ADDRESS: 10.8.0.x
+      WG_DEFAULT_DNS: 10.2.0.100
+      WG_PERSISTENT_KEEPALIVE: 25
+      UI_CHART_TYPE: 1
+      UI_TRAFFIC_STATS: "true"
+      # WG_MTU: 1420
+      # WG_ALLOWED_IPS: 192.168.15.0/24, 10.0.1.0/24
+      
     volumes:
       - .:/etc/wireguard
     ports:
@@ -36,16 +37,28 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     sysctls:
-      - net.ipv4.ip_forward=1
-      - net.ipv4.conf.all.src_valid_mark=1
+      net.ipv4.ip_forward: 1
+      net.ipv4.conf.all.src_valid_mark: 1
     networks:
       private_network:
         ipv4_address: 10.2.0.3
 
+  adguard:
+    image: adguard/adguardhome
+    container_name: adguard
+    restart: unless-stopped
+    hostname: adguard
+    volumes:
+      - "./adguard/opt-adguard-work:/opt/adguardhome/work"
+      - "./adguard/opt-adguard-conf:/opt/adguardhome/conf"
+    networks:
+      private_network:
+        ipv4_address: 10.2.0.100
+
+  # Uncomment and configure if needed
   # tailscale:
-  #   depends_on: [adguard]
-  #   container_name: tailscaled
   #   image: tailscale/tailscale:stable
+  #   container_name: tailscaled
   #   restart: unless-stopped
   #   privileged: true
   #   command: tailscaled
@@ -58,18 +71,5 @@ services:
   #   dns:
   #     - 10.2.0.100
   #   sysctls:
-  #     - net.ipv4.ip_forward=1
-  #     - net.ipv6.conf.all.forwarding=1
-
-  adguard:
-    container_name: adguard
-    image: adguard/adguardhome
-    restart: unless-stopped
-    hostname: adguard
-    # Volumes store your data between container upgrades
-    volumes:
-      - "./adguard/opt-adguard-work:/opt/adguardhome/work"
-      - "./adguard/opt-adguard-conf:/opt/adguardhome/conf"
-    networks:
-      private_network:
-        ipv4_address: 10.2.0.100
+  #     net.ipv4.ip_forward: 1
+  #     net.ipv6.conf.all.forwarding: 1
