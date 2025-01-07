@@ -13,7 +13,6 @@ services:
     depends_on: 
       - adguard
     environment:
-      # âš ï¸ Required:
       # Change this to your host's public address
       WG_HOST:
       # Optional:
